@@ -23,9 +23,14 @@ Here is my code:
 ```python
 import pandas as pd
 train_ds=pd.read_csv('/content/train.csv')
+```
 A quick way to check for data information is using ".info()." From this, there are no catergorical data types. There are also no missing values in the data. Overall, there are no variables that should be taken out. All of them have a relationship between smoking one way or the other.
+```python
 train_ds.info()
 newdata = train_ds
+```
+Check for outliers in the dataset using the IQR method.
+```python
 # Define outliers function to count them using IQR method
 def count_outliers(df, feature_names):
     outlier_counts = {}
@@ -53,7 +58,11 @@ features_to_check = [
 
 # Count outliers for each feature
 outlier_counts = count_outliers(newdata, features_to_check)
-outlier_countsimport matplotlib.pyplot as plt
+outlier_counts
+```
+Visualize the outliers. Most of them seem to be on the upper bound which makes sense: smoking tends to increase the levels of these components, not decrease them.
+```python
+import matplotlib.pyplot as plt
 
 
 plt.figure(figsize=(15, 10))
@@ -67,12 +76,18 @@ for i, feature in enumerate(features_to_check, 1):
 
 plt.tight_layout()  # Adjust subplots to fit into figure area.
 plt.show()
+```
+Now it is a good idea to look at the distribution of every feature. Most of the distributions appear to be normal overall so that is also a good thing.
+```python
 import matplotlib.pyplot as plt
 
 # Creating histograms for each numerical feature in the dataset
 newdata.hist(figsize=(20, 15), bins=20, layout=(5, 5), color='skyblue', edgecolor='black')
 plt.subplots_adjust(hspace=0.5, wspace=0.5)
 plt.show()
+```
+One particular feature that is good to add is HDL:LDL ratio. This particular ratio is helpul in understanding your cholesterol. The higher the ratio, the better since HDL is considered the "good" cholesterol while LDL the "bad" one. The distribution of this ratio looks almost normal but overall it looks skewed to the right a little.
+```python
 # Add a new feature ->HDL:LDL cholesterol ratio
 newdata['HDL_LDL_ratio'] = newdata['HDL'] / newdata['LDL']
 
@@ -90,7 +105,9 @@ plt.xlabel('HDL to LDL Ratio')
 plt.ylabel('Frequency')
 plt.grid(True)
 plt.show()
-
+```
+Removing the outliers was ultimately decided. I tested both with and without the outliers and I yielded very similar results but the test ROC AUC score increases by .01 when the outliers are removed.
+```python
 import pandas as pd
 
 # Create function to remove outliers
@@ -126,7 +143,10 @@ cleaned_data = remove_outliers(newdata, features_to_check)
 
 print("Original Data Size:", train_ds.shape)
 print("Cleaned Data Size:", cleaned_data.shape)
-
+```
+# Training and Visualizing
+Select variables and split your data.
+```python
 from sklearn.model_selection import train_test_split
 
 
@@ -135,10 +155,18 @@ y = cleaned_data['smoking']  # Target variable
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+Scale the features
+```python
 from sklearn.preprocessing import StandardScaler
 sc = StandardScaler()
 X_train_scaled = sc.fit_transform(X_train)
 X_test_scaled = sc.transform(X_test)
+```
+Initialize the logistic regression model. In this case, the parameter distribution will be C, solver, & penalty. C represents inverse of regularization strength --> lower C = higher regularization. solver indicates the algorithm that will be used in this optimization problem. Saga is usually used in larger datasets and liblinear usually in smaller ones. L1 (Lasso) and L2 (Ridge) represent penalties. In this case, RandomizedSearchCV will be used over grid search because of computing time. The dataset is very big to perform grid search in this instance. After that, the model is fit and the best parameters are chosen:
+
+The ROC AUC training score comes out to 84% and the test 84% which is very decent overall.
+```python
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.linear_model import LogisticRegression
 import numpy as np
@@ -174,6 +202,9 @@ test_roc_auc = roc_auc_score(y_test, y_pred_proba)
 
 # Print ROC AUC score for the test set
 print("Test ROC AUC score: {:.2f}".format(test_roc_auc))
+```
+Visualize the model. The model again is very decent. It is well above the dashed line which it represents a random guess.
+```python
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
@@ -197,7 +228,10 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic (ROC)')
 plt.legend(loc="lower right")
 plt.show()
-
+```
+# Test Data
+Prepare the csv file.
+```python
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
@@ -231,4 +265,5 @@ submission_df.to_csv(submission_file_path, index=False)
 from google.colab import files
 files.download('/content/data/smoker_submission.csv')
 ```
+Conclusion: Overall, there are a couple of conclusions to be taken from this. The model is good and it is able to distinguish between negative and positive classes. Overall, it is significantly better than a random guess. There was not a need to do big amounts of data preprocessing as the data seemed fine overall. There were no null values. The outliers did not carry an effect on the model and most of the column distributions were somewhat close to normal. A feature was added, too. I did not think it was better to eliminate any columns as all of them have a relationship with smoking. The use of RandomSearchCV, again, was used because grid search was taking extensive amounts of time. For future improvement more complex models might work better. Furthermore, if this is for something medical, a very high accuracy might be needed. Still, in the context of this project, 84% works well.
 
