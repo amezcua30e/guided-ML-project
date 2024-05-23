@@ -19,3 +19,44 @@ Grading Scheme: The top 30% of submissions for each project will receive 20 poin
 
 Ensure you adhere to these guidelines and choose the project that best aligns with your skills and interests.
 
+Here's my code: 
+
+
+# Binary Prediction of Smoker Status using Bio-Signals
+# Import & Data Preprocessing
+import pandas as pd
+train_ds=pd.read_csv('/content/train.csv')
+A quick way to check for data information is using ".info()." From this, there are no catergorical data types. There are also no missing values in the data. Overall, there are no variables that should be taken out. All of them have a relationship between smoking one way or the other.
+train_ds.info()
+newdata = train_ds
+Check for outliers in the dataset using the IQR method.
+# Define outliers function to count them using IQR method
+def count_outliers(df, feature_names):
+    outlier_counts = {}
+    for feature in feature_names:
+        Q1 = df[feature].quantile(0.25)
+        Q3 = df[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Count outliers in the dataframe
+        count_below = (df[feature] < lower_bound).sum()
+        count_above = (df[feature] > upper_bound).sum()
+        outlier_counts[feature] = count_below + count_above
+
+    return outlier_counts
+features_to_check = [
+    'height(cm)', 'weight(kg)', 'systolic', 'relaxation',
+    'fasting blood sugar', 'Cholesterol', 'triglyceride',
+    'HDL', 'LDL', 'hemoglobin',
+    'eyesight(left)', 'eyesight(right)',
+    'Urine protein', 'serum creatinine', 'AST', 'ALT', 'Gtp'
+]
+
+
+# Count outliers for each feature
+outlier_counts = count_outliers(newdata, features_to_check)
+outlier_counts
+
+
