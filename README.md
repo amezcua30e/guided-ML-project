@@ -19,9 +19,11 @@ Grading Scheme: The top 30% of submissions for each project will receive 20 poin
 
 Ensure you adhere to these guidelines and choose the project that best aligns with your skills and interests.
 Here is my code:
+# Import & Data Preprocessing
 ```python
 import pandas as pd
 train_ds=pd.read_csv('/content/train.csv')
+A quick way to check for data information is using ".info()." From this, there are no catergorical data types. There are also no missing values in the data. Overall, there are no variables that should be taken out. All of them have a relationship between smoking one way or the other.
 train_ds.info()
 newdata = train_ds
 # Define outliers function to count them using IQR method
